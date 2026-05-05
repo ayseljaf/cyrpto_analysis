@@ -5,12 +5,14 @@ It now also includes a Kafka streaming path for near-real-time dashboard prices.
 
 **Pairs:** BTC, ETH, SOL, ADA, DOGE, SHIB, USDC
 
-## DAG RUNS
+## DAG Runs
 ![alt text](https://github.com/ayseljaf/cyrpto_analysis/blob/main/docs/images/Screenshot%202026-05-05%20at%2014.37.34.png)
 
 ## Dashboard
 ![alt text](https://github.com/ayseljaf/cyrpto_analysis/blob/main/docs/images/Screenshot%202026-05-05%20at%2015.07.46.png)
 
+## Kafka UI
+![alt text](https://github.com/ayseljaf/cyrpto_analysis/blob/main/docs/images/Screenshot%202026-05-05%20at%2021.42.22.png)
 
 ## Stack
 
