@@ -63,6 +63,7 @@ docker compose --env-file .env.docker up -d
 | Airflow UI     | http://localhost:8080    | admin / admin |
 | FastAPI docs   | http://localhost:8000/docs |             |
 | Dashboard      | http://localhost:8050    |               |
+| Kafka UI       | http://localhost:8081    |               |
 | Flower         | http://localhost:5555    |               |
 
 ## API Endpoints
