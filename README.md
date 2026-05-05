@@ -3,7 +3,11 @@
 Daily ETL pipeline that pulls cryptocurrency price data from Binance, stores it in TimescaleDB, and exposes it via a FastAPI service.
 
 **Pairs:** BTC, ETH, SOL, ADA, DOGE, SHIB, USDC
+
+## DAG RUNS
 ![alt text](https://github.com/ayseljaf/cyrpto_analysis/blob/main/docs/images/Screenshot%202026-05-05%20at%2014.37.34.png)
+
+## Dashboard
 ![alt text](https://github.com/ayseljaf/cyrpto_analysis/blob/main/docs/images/Screenshot%202026-05-05%20at%2015.07.46.png)
 
 
