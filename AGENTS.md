@@ -1,48 +1,21 @@
 <claude-mem-context>
 # Memory Context
 
-# [cyrpto_analysis] recent context, 2026-05-05 6:33pm GMT+2
+# [cyrpto_analysis] recent context, 2026-05-05 9:29pm GMT+2
 
 Legend: 🎯session 🔴bugfix 🟣feature 🔄refactor ✅change 🔵discovery ⚖️decision 🚨security_alert 🔐security_note
 Format: ID TIME TYPE TITLE
 Fetch details: get_observations([IDs]) | Search: mem-search skill
 
-Stats: 50 obs (17,201t read) | 383,963t work | 96% savings
+Stats: 50 obs (17,737t read) | 451,672t work | 96% savings
 
-### May 3, 2026
-35 10:32p 🟣 docker/docker-compose.yml Created — Main Stack with TimescaleDB, Redis, APIs, Dashboard on crypto_network
-36 " 🟣 Task-03 Complete: docker/ Directory Fully Populated, Both Compose Files YAML-Valid
-37 " 🔐 docker/.env.docker Not Gitignored — Real Credentials Will Be Committed
-38 10:33p 🔴 .gitignore Updated to Exclude docker/.env.docker
-39 10:43p 🔵 TimescaleDB Container Running as docker-timescaledb-1 But psql Auth Failing
-40 10:44p 🔵 TimescaleDB Container Running — crypto_db Initialized with crypto_user as Owner
-41 " 🔵 Two SQL Files: setup_tables.sql Creates crypto_prices, create_analysis_tables.sql Creates DAG Tables
-42 10:49p 🟣 Task-04 Complete: All Database Tables Migrated to crypto_db on docker-timescaledb-1
 ### May 4, 2026
-43 10:25a 🔵 Crypto Analysis Task Audit: Implementation Status
-44 10:42a 🔵 Task-04 Spec: DB Setup Details and Table Count Discrepancy
-45 11:00a 🔵 airflow_db Contains Airflow Metadata Tables; crypto_db Indexes Verified
-46 11:02a 🔵 Task-01 Spec: reference_files/ Never in Planned Directory Structure
-47 " 🔵 Task-01 and Task-02 Actual State Verified; .env.docker Contents Confirmed
-48 11:04a 🔵 Task-02 DAG Syntax and Best Practices Verified
-49 " 🟣 FastAPI App Created at Project Root with Pydantic Models and DI
-50 " 🟣 docker/Dockerfile.fastapi Created with Python 3.11 and SQLAlchemy 2.x
-51 " 🔵 docker-compose.yml Already Contains Service Stubs for All API Services
-53 11:08a 🔵 docker/Dockerfile.fastapi Not Visible in Directory Listing After Write
-55 11:10a 🟣 FastAPI Service Live — Endpoints Returning Real Data from TimescaleDB
-52 11:11a ✅ docker-compose.yml fastapi Service Updated to Use Dockerfile.fastapi
-54 11:13a 🟣 FastAPI Docker Image Built Successfully
 S34 FastAPI src/ package fully refactored with database.py separation; Task-05 complete, ready for Task-06 Flask (May 4 at 11:26 AM)
 S31 Implement crypto_analysis tasks: refactored FastAPI to src/ package, rebuilt and verified container (May 4 at 11:26 AM)
 S32 FastAPI src/ package refactor complete and verified; pydantic-settings discussed but deferred (May 4 at 11:26 AM)
-56 11:26a 🔄 FastAPI src/ package split: src/database.py extracted
 S35 Debug and fix crypto_analysis_pipeline DAG — two extract bugs identified and resolved, all 7 extract tasks now succeeding (May 4 at 3:37 PM)
-57 3:50p 🔵 DAG extract task has no idempotency — appends duplicates on re-run
-58 " 🔵 DAG structure: 521 lines, 7 tasks, dynamic mapping, sensors, data quality checks
-59 " 🔵 Airflow stack healthy, DAG loaded with no import errors
 60 4:03p 🔵 DAG topology confirmed live in scheduler — 9 tasks, no import errors
 61 " 🟣 First manual DAG run triggered for crypto_analysis_pipeline
-62 " 🔵 All 7 extract_crypto_data tasks failing and retrying on first DAG run
 63 4:08p 🔵 airflow tasks logs command doesn't exist in this Airflow version
 64 4:17p 🔵 Root cause of extract failures: crypto_postgres Airflow connection not registered
 65 4:40p 🔵 extract_crypto_data fails with UniqueViolation on re-run — no idempotency guard confirmed
@@ -71,24 +44,33 @@ S40 Docker compose stack startup failure — Redis crash + env var expansion roo
 84 " ✅ README.md rewritten — replaced Astronomer boilerplate with actual project docs
 S39 Docker compose stack startup — diagnosed Redis fatal crash and env var expansion issue, identified fix using --env-file flag (May 4 at 10:15 PM)
 S41 README.md rewritten from Astronomer boilerplate to actual project documentation covering stack, startup, URLs, API endpoints (May 4 at 10:19 PM)
-**Investigated**: - README.md: confirmed it was pure Astronomer CLI boilerplate from `astro dev init` with no project-specific content
-    - docker compose logs (timescaledb, redis): timescaledb healthy; redis crashing with "requirepass wrong number of arguments" due to empty REDIS_PASSWORD
+### May 5, 2026
+114 8:28p 🔵 crypto_analysis Project Structure — Pre-Kafka Implementation Baseline
+115 8:29p 🟣 Streaming Module Scaffolded — Directories and Schema Normalization Created
+116 " 🟣 db_writer.py Created — Idempotent Raw Events Insert + Latest Prices Upsert
+117 " 🟣 Binance Kafka Producer Implemented with Auto-Reconnect and Graceful Shutdown
+118 " 🟣 Kafka Consumer Implemented — DB-First Commit Ordering, Per-Message Transaction
+119 8:30p 🟣 Streaming SQL Migration and Dockerfile Created
+120 " 🟣 docker-compose.yml Updated — Kafka Stack and Streaming Services Added
+121 " ✅ Zookeeper Healthcheck Removed from docker-compose.yml
+122 " 🟣 Dashboard Updated with Real-Time Latest Prices Panel and 5-Second Refresh
+123 " 🟣 Unit Tests Created for Schema Normalization and DB Writer
+124 8:31p 🔴 tests/conftest.py Patched to Add src/ to sys.path for Streaming Imports
+125 " 🟣 Streaming Unit Tests Pass — 2/2 Green; Integration Test Placeholder Added
+127 " 🔵 Docker Socket Permission Denied — Stack Cannot Be Deployed from Claude Code Session
+128 " 🟣 Docker Stack Deployment Initiated — Kafka Images Pulling Successfully with Escalated Permissions
+129 " 🟣 Full Kafka Streaming Stack Deployed Successfully — All Services Started
+126 " 🔵 docker-compose.yml Validates Successfully — Minor version Attribute Warning
+131 8:32p ✅ README Update — Kafka Streaming Section Added
+130 8:34p 🔵 Post-Deploy Verification Commands Blocked — Docker Socket Escalation Not Persistent
+132 9:23p ✅ README.md — Kafka Streaming Section Added
+133 " 🔵 Docker Socket Permission Denied Without Escalation
+134 9:24p 🔵 Dashboard Shows Empty — Airflow Stack Not Running in Streaming-Only Deploy
+136 " 🟣 kafka-ui Added and Started — Kafka Topic Browser at localhost:8081
+138 " 🔵 kafka-ui Healthy — Connected to Cluster "local", Polling Every 30s
+139 " ✅ README.md — kafka-ui URL Added to URLs Table
+135 9:25p 🔵 kafka-ui Service Not Defined in docker-compose.yml
+137 " 🟣 kafka-ui Container Started Successfully
 
-**Learned**: - `env_file:` in compose service = vars inside container; `--env-file` CLI flag = vars for YAML interpolation at parse time — different mechanisms
-    - Redis 7.4.7 fatally rejects empty `requirepass` argument — no graceful fallback
-    - Must always use `docker compose --env-file .env.docker [subcommand]` for this project
-    - Project was initialized with `astro dev init` (Astronomer CLI) but now uses custom docker-compose.yml
-
-**Completed**: - README.md: fully rewritten — stack description, quick start with correct `--env-file .env.docker` flag, stop/restart commands, service URLs table (Airflow :8080, FastAPI :8000/docs, Flower :5555), all 5 API endpoints documented, project structure
-    - Root cause of Redis startup failure identified: missing `--env-file .env.docker` on docker compose commands
-    - Earlier sessions: docker-compose.yml unified, db-init service, AIRFLOW_CONN_CRYPTO_POSTGRES, FastAPI src/ refactor, DAG idempotency fix, NUMERIC(30,8) SHIB fix
-
-**Next Steps**: - Run `docker compose --env-file .env.docker down && docker compose --env-file .env.docker up -d` to verify full stack healthy
-    - Remaining cleanup: remove `version: '3.8'` from docker-compose.yml, update sql/setup_tables.sql volume cols to NUMERIC(30,8), delete stale docker-compose.airflow.yml
-    - Task-06: Flask service (crypto_api_flask.py + Dockerfile.flask)
-    - Task-07: crypto_dashboard.py PostgreSQL migration
-    - Task-08: integration tests in tests/integration/
-
-
-Access 384k tokens of past work via get_observations([IDs]) or mem-search skill.
+Access 452k tokens of past work via get_observations([IDs]) or mem-search skill.
 </claude-mem-context>

@@ -83,7 +83,8 @@ services:
         export PGPASSWORD=$$POSTGRES_PASSWORD
         psql -h timescaledb -U $$POSTGRES_USER -d postgres -c "SELECT 1 FROM pg_database WHERE datname='airflow_db'" | grep -q 1 || psql -h timescaledb -U $$POSTGRES_USER -d postgres -c "CREATE DATABASE airflow_db"
         psql -h timescaledb -U $$POSTGRES_USER -d $$POSTGRES_DB -f /sql/setup_tables.sql &&
-        psql -h timescaledb -U $$POSTGRES_USER -d $$POSTGRES_DB -f /sql/create_analysis_tables.sql
+        psql -h timescaledb -U $$POSTGRES_USER -d $$POSTGRES_DB -f /sql/create_analysis_tables.sql &&
+        psql -h timescaledb -U $$POSTGRES_USER -d $$POSTGRES_DB -f /sql/create_streaming_tables.sql
     depends_on:
       timescaledb:
         condition: service_healthy
@@ -235,6 +236,102 @@ services:
       <<: *airflow-common-depends-on
       airflow-init:
         condition: service_completed_successfully
+
+  zookeeper:
+    image: confluentinc/cp-zookeeper:7.5.3
+    environment:
+      ZOOKEEPER_CLIENT_PORT: 2181
+      ZOOKEEPER_TICK_TIME: 2000
+    ports:
+      - "2181:2181"
+    restart: unless-stopped
+    networks:
+      - crypto_network
+
+  kafka:
+    image: confluentinc/cp-kafka:7.5.3
+    depends_on:
+      zookeeper:
+        condition: service_started
+    ports:
+      - "9092:9092"
+      - "29092:29092"
+    environment:
+      KAFKA_BROKER_ID: 1
+      KAFKA_ZOOKEEPER_CONNECT: zookeeper:2181
+      KAFKA_LISTENER_SECURITY_PROTOCOL_MAP: PLAINTEXT:PLAINTEXT,PLAINTEXT_HOST:PLAINTEXT
+      KAFKA_ADVERTISED_LISTENERS: PLAINTEXT://kafka:9092,PLAINTEXT_HOST://localhost:29092
+      KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR: 1
+      KAFKA_AUTO_CREATE_TOPICS_ENABLE: "true"
+      KAFKA_LOG_RETENTION_HOURS: 72
+    healthcheck:
+      test: ["CMD-SHELL", "kafka-topics --bootstrap-server localhost:9092 --list >/dev/null 2>&1"]
+      interval: 15s
+      timeout: 10s
+      retries: 10
+    restart: unless-stopped
+    networks:
+      - crypto_network
+
+  kafka-ui:
+    image: provectuslabs/kafka-ui:v0.7.2
+    depends_on:
+      kafka:
+        condition: service_healthy
+    ports:
+      - "8081:8080"
+    environment:
+      KAFKA_CLUSTERS_0_NAME: local
+      KAFKA_CLUSTERS_0_BOOTSTRAPSERVERS: kafka:9092
+      KAFKA_CLUSTERS_0_ZOOKEEPER: zookeeper:2181
+    restart: unless-stopped
+    networks:
+      - crypto_network
+
+  stream-producer:
+    build:
+      context: ..
+      dockerfile: docker/Dockerfile.streaming
+    env_file:
+      - .env.docker
+    environment:
+      KAFKA_BOOTSTRAP_SERVERS: kafka:9092
+      KAFKA_TOPIC_TRADES: binance.trades.raw
+      BINANCE_STREAMS: btcusdt@trade,ethusdt@trade,solusdt@trade,adausdt@trade,dogeusdt@trade,shibusdt@trade,usdcusdt@trade
+      PYTHONPATH: /app/src
+    command: ["python", "-m", "streaming.producer"]
+    depends_on:
+      kafka:
+        condition: service_healthy
+    restart: unless-stopped
+    networks:
+      - crypto_network
+
+  stream-consumer:
+    build:
+      context: ..
+      dockerfile: docker/Dockerfile.streaming
+    env_file:
+      - .env.docker
+    environment:
+      KAFKA_BOOTSTRAP_SERVERS: kafka:9092
+      KAFKA_TOPIC_TRADES: binance.trades.raw
+      KAFKA_CONSUMER_GROUP: crypto-stream-consumer
+      POSTGRES_HOST: timescaledb
+      POSTGRES_PORT: 5432
+      POSTGRES_DB: ${POSTGRES_DB}
+      POSTGRES_USER: ${POSTGRES_USER}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+      PYTHONPATH: /app/src
+    command: ["python", "-m", "streaming.consumer"]
+    depends_on:
+      kafka:
+        condition: service_healthy
+      db-init:
+        condition: service_completed_successfully
+    restart: unless-stopped
+    networks:
+      - crypto_network
 
 networks:
   crypto_network:

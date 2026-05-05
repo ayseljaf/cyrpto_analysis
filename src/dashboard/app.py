@@ -43,7 +43,16 @@ def load_all_data_from_db():
         )
         weekly_changes["date"] = pd.to_datetime(weekly_changes["date"])
 
-    return monthly_stats, overall_stats, weekly_changes
+        latest_prices = pd.read_sql(
+            """
+            SELECT symbol, last_price, last_event_time, updated_at
+            FROM latest_prices
+            ORDER BY symbol
+            """,
+            conn,
+        )
+
+    return monthly_stats, overall_stats, weekly_changes, latest_prices
 
 
 CRYPTO_OPTIONS = [
@@ -60,12 +69,18 @@ app.layout = html.Div(
     [
         dcc.Interval(
             id="interval-component",
-            interval=5 * 60 * 1000,
+            interval=5 * 1000,
             n_intervals=0,
         ),
         html.H1(
             "Cryptocurrency Analysis Dashboard",
             style={"textAlign": "center", "color": "#2c3e50", "marginBottom": 30},
+        ),
+        html.Div(
+            [
+                html.H2("Real-Time Latest Prices", style={"color": "#34495e", "marginBottom": 20}),
+                dcc.Graph(id="latest-prices-table"),
+            ]
         ),
         html.Div(
             [
@@ -108,6 +123,7 @@ app.layout = html.Div(
         Output("overall-stats-table", "figure"),
         Output("weekly-changes-chart", "figure"),
         Output("price-range-chart", "figure"),
+        Output("latest-prices-table", "figure"),
     ],
     [
         Input("crypto-selector", "value"),
@@ -115,7 +131,7 @@ app.layout = html.Div(
     ],
 )
 def update_graphs(selected_crypto, n_intervals):
-    monthly_stats, overall_stats, weekly_changes = load_all_data_from_db()
+    monthly_stats, overall_stats, weekly_changes, latest_prices = load_all_data_from_db()
 
     monthly_fig = px.line(
         monthly_stats[monthly_stats["symbol"] == selected_crypto],
@@ -167,7 +183,38 @@ def update_graphs(selected_crypto, n_intervals):
         template="plotly_white",
     )
 
-    return monthly_fig, stats_fig, weekly_fig, range_fig
+    if latest_prices.empty:
+        latest_fig = go.Figure()
+        latest_fig.update_layout(
+            title="Real-Time Latest Prices (waiting for stream data)",
+            template="plotly_white",
+        )
+    else:
+        latest_fig = go.Figure(
+            data=[
+                go.Table(
+                    header=dict(
+                        values=["symbol", "last_price", "last_event_time", "updated_at"],
+                        fill_color="#34495e",
+                        align="left",
+                        font=dict(color="white", size=12),
+                    ),
+                    cells=dict(
+                        values=[
+                            latest_prices["symbol"],
+                            latest_prices["last_price"],
+                            latest_prices["last_event_time"],
+                            latest_prices["updated_at"],
+                        ],
+                        fill_color="lavender",
+                        align="left",
+                    ),
+                )
+            ]
+        )
+        latest_fig.update_layout(title="Real-Time Latest Prices")
+
+    return monthly_fig, stats_fig, weekly_fig, range_fig, latest_fig
 
 
 if __name__ == "__main__":

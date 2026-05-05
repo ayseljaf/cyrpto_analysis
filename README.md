@@ -1,6 +1,7 @@
 # Crypto Analysis Pipeline
 
 Daily ETL pipeline that pulls cryptocurrency price data from Binance, stores it in TimescaleDB, and exposes it via a FastAPI service.
+It now also includes a Kafka streaming path for near-real-time dashboard prices.
 
 **Pairs:** BTC, ETH, SOL, ADA, DOGE, SHIB, USDC
 
@@ -18,6 +19,16 @@ Daily ETL pipeline that pulls cryptocurrency price data from Binance, stores it 
 - **FastAPI** — REST API over the processed data
 - **Dash Dashboard** — browser UI for monthly statistics, weekly changes, and overall metrics
 - **Redis** — Celery broker
+- **Kafka + ZooKeeper** — real-time trade stream transport from producer to consumer
+
+## Kafka Streaming (Brief)
+
+- `stream-producer` connects to Binance WebSocket trades and publishes normalized events to Kafka topic `binance.trades.raw`.
+- Kafka buffers and distributes these events reliably (decouples ingest from DB writes).
+- `stream-consumer` reads that topic and writes:
+  - `raw_events` (append-only event history, idempotent on `event_id`)
+  - `latest_prices` (upsert per symbol for real-time dashboard panel)
+- Dashboard reads `latest_prices` for near-real-time last price updates, while Airflow remains focused on scheduled analytics jobs.
 
 ## Quick Start
 
