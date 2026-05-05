@@ -1,0 +1,21 @@
+FROM python:3.9-slim
+
+WORKDIR /app
+
+RUN apt-get update && apt-get install -y \
+    gcc \
+    libpq-dev \
+    && rm -rf /var/lib/apt/lists/*
+
+RUN pip install --no-cache-dir \
+    dash==2.14.2 \
+    plotly==5.18.0 \
+    pandas==2.1.4 \
+    sqlalchemy==1.4.51 \
+    psycopg2-binary==2.9.9
+
+COPY src/dashboard/ .
+
+EXPOSE 8050
+
+CMD ["python", "app.py"]

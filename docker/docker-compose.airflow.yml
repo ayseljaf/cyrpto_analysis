@@ -17,7 +17,6 @@ x-airflow-common:
     AIRFLOW__API__AUTH_BACKENDS: 'airflow.api.auth.backend.basic_auth,airflow.api.auth.backend.session'
     AIRFLOW__SCHEDULER__ENABLE_HEALTH_CHECK: 'true'
     AIRFLOW__WEBSERVER__SECRET_KEY: ${AIRFLOW_FERNET_KEY}
-    AIRFLOW_CONN_CRYPTO_POSTGRES: postgresql://${POSTGRES_USER}:${POSTGRES_PASSWORD}@timescaledb:5432/${POSTGRES_DB}
     AIRFLOW_UID: ${AIRFLOW_UID:-50000}
   volumes:
     - ../dags:/opt/airflow/dags
@@ -31,27 +30,8 @@ x-airflow-common:
     &airflow-common-depends-on
     redis:
       condition: service_healthy
-    timescaledb:
-      condition: service_healthy
 
 services:
-  timescaledb:
-    image: timescale/timescaledb:latest-pg14
-    env_file:
-      - .env.docker
-    volumes:
-      - timescaledb_data:/var/lib/postgresql/data
-    ports:
-      - "${POSTGRES_PORT}:5432"
-    healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U $$POSTGRES_USER -d postgres"]
-      interval: 10s
-      timeout: 5s
-      retries: 5
-    restart: unless-stopped
-    networks:
-      - crypto_network
-
   redis:
     image: redis:7-alpine
     command: ["sh", "-c", "redis-server --requirepass $$REDIS_PASSWORD"]
@@ -69,88 +49,6 @@ services:
     restart: unless-stopped
     networks:
       - crypto_network
-
-  db-init:
-    image: timescale/timescaledb:latest-pg14
-    env_file:
-      - .env.docker
-    volumes:
-      - ../sql:/sql
-    entrypoint: /bin/bash
-    command:
-      - -c
-      - |
-        export PGPASSWORD=$$POSTGRES_PASSWORD
-        psql -h timescaledb -U $$POSTGRES_USER -d postgres -c "SELECT 1 FROM pg_database WHERE datname='airflow_db'" | grep -q 1 || psql -h timescaledb -U $$POSTGRES_USER -d postgres -c "CREATE DATABASE airflow_db"
-        psql -h timescaledb -U $$POSTGRES_USER -d $$POSTGRES_DB -f /sql/setup_tables.sql &&
-        psql -h timescaledb -U $$POSTGRES_USER -d $$POSTGRES_DB -f /sql/create_analysis_tables.sql
-    depends_on:
-      timescaledb:
-        condition: service_healthy
-    networks:
-      - crypto_network
-
-  fastapi:
-    build:
-      context: ..
-      dockerfile: docker/Dockerfile.fastapi
-    ports:
-      - "${FASTAPI_PORT}:8000"
-    env_file:
-      - .env.docker
-    environment:
-      - DATABASE_URL=postgresql://${POSTGRES_USER}:${POSTGRES_PASSWORD}@timescaledb:5432/${POSTGRES_DB}
-    depends_on:
-      db-init:
-        condition: service_completed_successfully
-    restart: unless-stopped
-    networks:
-      - crypto_network
-
-  dashboard:
-    build:
-      context: ..
-      dockerfile: docker/Dockerfile.dashboard
-    container_name: crypto_dashboard
-    ports:
-      - "${DASH_PORT:-8050}:8050"
-    environment:
-      - CRYPTO_DB_HOST=timescaledb
-      - CRYPTO_DB_PORT=5432
-      - CRYPTO_DB_NAME=${POSTGRES_DB}
-      - CRYPTO_DB_USER=${POSTGRES_USER}
-      - CRYPTO_DB_PASSWORD=${POSTGRES_PASSWORD}
-    depends_on:
-      timescaledb:
-        condition: service_healthy
-    restart: unless-stopped
-    networks:
-      - crypto_network
-
-  airflow-init:
-    <<: *airflow-common
-    entrypoint: /bin/bash
-    command:
-      - -c
-      - |
-        mkdir -p /sources/logs /sources/dags /sources/plugins
-        chown -R "${AIRFLOW_UID:-50000}:0" /sources/{logs,dags,plugins}
-        exec /entrypoint airflow version
-    environment:
-      <<: *airflow-common-env
-      _AIRFLOW_DB_MIGRATE: 'true'
-      _AIRFLOW_WWW_USER_CREATE: 'true'
-      _AIRFLOW_WWW_USER_USERNAME: ${AIRFLOW_ADMIN_USER:-admin}
-      _AIRFLOW_WWW_USER_PASSWORD: ${AIRFLOW_ADMIN_PASSWORD:-admin}
-    user: "0:0"
-    volumes:
-      - ../:/sources
-    networks:
-      - crypto_network
-    depends_on:
-      <<: *airflow-common-depends-on
-      db-init:
-        condition: service_completed_successfully
 
   airflow-webserver:
     <<: *airflow-common
@@ -219,6 +117,30 @@ services:
       airflow-init:
         condition: service_completed_successfully
 
+  airflow-init:
+    <<: *airflow-common
+    entrypoint: /bin/bash
+    command:
+      - -c
+      - |
+        mkdir -p /sources/logs /sources/dags /sources/plugins
+        chown -R "${AIRFLOW_UID:-50000}:0" /sources/{logs,dags,plugins}
+        exec /entrypoint airflow version
+    environment:
+      <<: *airflow-common-env
+      _AIRFLOW_DB_MIGRATE: 'true'
+      _AIRFLOW_WWW_USER_CREATE: 'true'
+      _AIRFLOW_WWW_USER_USERNAME: ${AIRFLOW_ADMIN_USER:-admin}
+      _AIRFLOW_WWW_USER_PASSWORD: ${AIRFLOW_ADMIN_PASSWORD:-admin}
+    user: "0:0"
+    volumes:
+      - ../:/sources
+    networks:
+      - crypto_network
+    depends_on:
+      redis:
+        condition: service_healthy
+
   flower:
     <<: *airflow-common
     command: celery flower
@@ -238,9 +160,8 @@ services:
 
 networks:
   crypto_network:
+    external: true
     name: crypto_network
 
 volumes:
-  timescaledb_data:
   redis_data:
-  data:

@@ -1,0 +1,10 @@
+apache-airflow[celery,postgres,redis]==2.8.1
+apache-airflow-providers-postgres==5.10.0
+apache-airflow-providers-celery==3.6.0
+apache-airflow-providers-common-sql==1.10.0
+redis==5.0.1
+flower==2.0.1
+python-binance==1.0.19
+pandas==2.1.4
+sqlalchemy==1.4.51
+psycopg2-binary==2.9.9

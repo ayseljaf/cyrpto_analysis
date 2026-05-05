@@ -1,12 +1,19 @@
+# Astro Runtime includes the following pre-installed providers packages: https://www.astronomer.io/docs/astro/runtime-image-architecture#provider-packages
+# Astro Runtime 3.2-3 uses Python 3.13 and Airflow 3.x (requires SQLAlchemy 2.0+, httpx>=0.27.0)
+
+# Airflow providers
+apache-airflow-providers-postgres>=5.0.0
+
+# Python packages for crypto analysis pipeline
 python-binance==1.0.19
-pandas==2.1.0
-python-dateutil==2.8.2
-sqlalchemy==2.0.23
-psycopg2-binary==2.9.9
-python-dotenv==1.0.0
-plotly==5.18.0
-dash==2.14.2
-fastapi==0.104.1
-uvicorn==0.24.0
-flask==3.0.0
-flask-cors==4.0.0 
+pandas>=2.2.0  # Python 3.13 compatible
+# sqlalchemy and httpx are pre-installed by Astro Runtime
+# Using psycopg (v3) instead of psycopg2-binary for Python 3.13 compatibility
+psycopg[binary]>=3.1.0
+
+# Testing dependencies
+pytest>=7.4.3
+pytest-asyncio>=0.21.1
+pytest-cov>=4.1.0
+pytest-mock>=3.12.0
+faker>=20.1.0

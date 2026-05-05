@@ -1,114 +1,74 @@
-# Cryptocurrency Analysis Tool
+# Crypto Analysis Pipeline
 
-A Python-based tool for analyzing cryptocurrency price data, generating statistics, and creating interactive visualizations.
+Daily ETL pipeline that pulls cryptocurrency price data from Binance, stores it in TimescaleDB, and exposes it via a FastAPI service.
 
-This tool performs comprehensive analysis of cryptocurrency price data by:
-- Tracking daily price movements and calculating key metrics
-- Analyzing monthly trends and price ranges
-- Computing volatility and price change statistics
-- Generating interactive visualizations for price trends
-- Providing both detailed CSV reports and visual insights
+**Pairs:** BTC, ETH, SOL, ADA, DOGE, SHIB, USDC
 
-## Features
+## Stack
 
-- Load and process cryptocurrency price data from CSV files
-- Calculate monthly statistics including average, highest, and lowest prices
-- Generate overall price statistics with volatility metrics
-- Track weekly price changes and percentage variations
-- Create interactive price trend visualizations using Plotly
-- Export analysis results to CSV files
-- Web interface for data visualization (coming soon)
+- **Airflow** (CeleryExecutor) — orchestrates daily extraction and analysis
+- **TimescaleDB** — stores raw prices and computed statistics
+- **FastAPI** — REST API over the processed data
+- **Dash Dashboard** — browser UI for monthly statistics, weekly changes, and overall metrics
+- **Redis** — Celery broker
 
-## Prerequisites
+## Quick Start
 
-- Python 3.8 or higher
-- PostgreSQL database (for data storage)
-- Binance API access (for data collection)
-
-## Installation
-
-1. Clone the repository:
 ```bash
-git clone https://github.com/yourusername/cyrpto_analysis.git
-cd cyrpto_analysis
+cd docker
+docker compose --env-file .env.docker up -d
 ```
 
-2. Create and activate a virtual environment:
+Wait ~60s for all services to become healthy, then trigger the pipeline:
+
 ```bash
-python -m venv venv
-source venv/bin/activate  # On Windows, use: venv\Scripts\activate
+docker exec docker-airflow-scheduler-1 airflow dags trigger crypto_analysis_pipeline
 ```
 
-3. Install required packages:
+## Stop / Restart
+
 ```bash
-pip install -r requirements.txt
+# Stop (keep data)
+docker compose --env-file .env.docker down
+
+# Full reset (wipe volumes)
+docker compose --env-file .env.docker down -v
+
+# Restart
+docker compose --env-file .env.docker up -d
 ```
 
-4. Set up environment variables:
-Create a `.env` file in the project root with the following variables:
+## URLs
+
+| Service        | URL                      | Credentials   |
+|----------------|--------------------------|---------------|
+| Airflow UI     | http://localhost:8080    | admin / admin |
+| FastAPI docs   | http://localhost:8000/docs |             |
+| Dashboard      | http://localhost:8050    |               |
+| Flower         | http://localhost:5555    |               |
+
+## API Endpoints
+
 ```
-DB_HOST=your_database_host
-DB_PORT=your_database_port
-DB_NAME=your_database_name
-DB_USER=your_database_user
-DB_PASSWORD=your_database_password
-BINANCE_API_KEY=your_binance_api_key
-BINANCE_API_SECRET=your_binance_api_secret
+GET /health
+GET /cryptocurrencies
+GET /api/monthly-statistics?symbol=BTCUSDT&months=12
+GET /api/weekly-changes?symbol=BTCUSDT&days=30
+GET /api/overall-statistics?symbol=BTCUSDT
 ```
 
 ## Project Structure
 
 ```
-cyrpto_analysis/
-├── data/                   # Directory for CSV data files
-├── crypto_analysis.py      # Main analysis script
-├── data_collector.py       # Script for collecting data from Binance
-├── db_config.py           # Database configuration
-├── requirements.txt       # Project dependencies
-└── README.md             # Project documentation
+dags/            Airflow DAG (crypto_pipeline_dag.py)
+src/             FastAPI app (main.py, schemas.py, database.py)
+src/dashboard/   Dash dashboard app
+sql/             DB setup scripts
+docker/          Dockerfiles + docker-compose.yml
+logs/            Airflow task logs
 ```
 
-## Usage
+## Requirements
 
-1. Collect cryptocurrency data:
-```bash
-python data_collector.py
-```
-
-2. Run the analysis:
-```bash
-python crypto_analysis.py
-```
-
-The script will:
-- Load cryptocurrency price data from CSV files
-- Calculate monthly statistics
-- Generate overall price statistics
-- Track weekly price changes
-- Create interactive visualizations
-- Save results to CSV files in the data directory
-
-## Output Files
-
-- `data/monthly_analysis.csv`: Monthly statistics for each cryptocurrency
-- `data/overall_statistics.csv`: Overall price statistics and volatility metrics
-- `data/weekly_changes.csv`: Weekly price changes and percentage variations
-- `crypto_trends.html`: Interactive price trend visualization
-
-## Dependencies
-
-- python-binance: Binance API integration
-- pandas: Data manipulation and analysis
-- sqlalchemy: Database ORM
-- plotly: Interactive visualizations
-- dash: Web application framework
-- fastapi: API framework
-- flask: Web server
-- Other dependencies listed in requirements.txt
-
-
-## Acknowledgments
-
-- Binance API for providing cryptocurrency data
-- Plotly for interactive visualization capabilities
-- Contributors and maintainers of all dependencies
+- Docker + Docker Compose
+- `docker/.env.docker` with credentials (see `.env.docker.example` if provided)
