@@ -24,3 +24,9 @@ airflow.cfg
 airflow.db
 
 AGENTS.md
+
+# Terraform local cache/state artifacts
+**/.terraform/
+*.tfstate
+*.tfstate.*
+crash.log

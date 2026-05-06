@@ -93,3 +93,8 @@ logs/            Airflow task logs
 
 - Docker + Docker Compose
 - `docker/.env.docker` with credentials (see `.env.docker.example` if provided)
+
+## Production Deployment
+
+- Azure production blueprint: [docs/azure-production-blueprint.md](docs/azure-production-blueprint.md)
+- Terraform skeleton: `infra/terraform/`

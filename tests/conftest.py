@@ -4,11 +4,22 @@ import os
 from pathlib import Path
 import sys
 
+PROJECT_ROOT = Path(__file__).parent.parent
+
+# Ensure Airflow writes only inside repository during tests.
+TEST_AIRFLOW_HOME = PROJECT_ROOT / ".tmp" / "airflow_home"
+TEST_AIRFLOW_LOGS = TEST_AIRFLOW_HOME / "logs"
+TEST_AIRFLOW_HOME.mkdir(parents=True, exist_ok=True)
+TEST_AIRFLOW_LOGS.mkdir(parents=True, exist_ok=True)
+os.environ.setdefault("AIRFLOW_HOME", str(TEST_AIRFLOW_HOME))
+os.environ.setdefault("AIRFLOW__LOGGING__BASE_LOG_FOLDER", str(TEST_AIRFLOW_LOGS))
+os.environ.setdefault("AIRFLOW__CORE__LOAD_EXAMPLES", "False")
+
 
 @pytest.fixture(scope="session")
 def project_root():
     """Get project root directory."""
-    return Path(__file__).parent.parent
+    return PROJECT_ROOT
 
 
 @pytest.fixture(scope="session")
@@ -39,8 +50,6 @@ def pytest_configure(config):
         "markers", "slow: mark test as slow running"
     )
 
-
-PROJECT_ROOT = Path(__file__).parent.parent
 SRC_PATH = PROJECT_ROOT / "src"
 if str(SRC_PATH) not in sys.path:
     sys.path.insert(0, str(SRC_PATH))

@@ -41,6 +41,22 @@ class TestProjectStructure:
         """Test SQL migration file exists."""
         assert os.path.isfile('sql/create_analysis_tables.sql'), \
             "sql/create_analysis_tables.sql should exist"
+
+    def test_streaming_sql_migration_file_exists(self):
+        """Test streaming SQL migration file exists."""
+        assert os.path.isfile('sql/create_streaming_tables.sql'), \
+            "sql/create_streaming_tables.sql should exist"
+
+    def test_pipeline_module_files_exist(self):
+        """Test refactored pipeline modules exist."""
+        expected_files = [
+            'src/pipeline/__init__.py',
+            'src/pipeline/config.py',
+            'src/pipeline/sql_queries.py',
+            'src/pipeline/task_logic.py',
+        ]
+        for file_path in expected_files:
+            assert os.path.isfile(file_path), f"{file_path} should exist"
     
     def test_requirements_airflow_exists(self):
         """Test requirements-airflow.txt exists."""

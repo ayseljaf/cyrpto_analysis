@@ -1,7 +1,6 @@
 """Test DAG structure and configuration."""
 import pytest
 from airflow.models import DagBag
-from datetime import datetime
 
 
 class TestCryptoPipelineDAG:
@@ -11,6 +10,10 @@ class TestCryptoPipelineDAG:
     def dagbag(self):
         """Load DAG bag."""
         return DagBag(dag_folder='dags/', include_examples=False)
+
+    @staticmethod
+    def _get_dag(dagbag):
+        return dagbag.dags["crypto_analysis_pipeline"]
     
     def test_dag_loaded(self, dagbag):
         """Test DAG is loaded without errors."""
@@ -21,10 +24,10 @@ class TestCryptoPipelineDAG:
     
     def test_dag_configuration(self, dagbag):
         """Test DAG configuration."""
-        dag = dagbag.get_dag('crypto_analysis_pipeline')
-        
-        assert dag.schedule_interval == '0 18 * * *', \
-            "Schedule should be daily at 18:00 UTC"
+        dag = self._get_dag(dagbag)
+
+        schedule = str(getattr(dag, "schedule", "") or getattr(dag, "schedule_interval", ""))
+        assert "0 18 * * *" in schedule, "Schedule should be daily at 18:00 UTC"
         assert dag.catchup is False, "Catchup should be disabled"
         assert dag.max_active_runs == 1, "Max active runs should be 1"
         assert 'crypto' in dag.tags, "Should have 'crypto' tag"
@@ -33,7 +36,7 @@ class TestCryptoPipelineDAG:
     
     def test_dag_has_required_tasks(self, dagbag):
         """Test DAG has all required tasks."""
-        dag = dagbag.get_dag('crypto_analysis_pipeline')
+        dag = self._get_dag(dagbag)
         task_ids = [task.task_id for task in dag.tasks]
         
         required_tasks = [
@@ -53,7 +56,7 @@ class TestCryptoPipelineDAG:
     
     def test_task_dependencies(self, dagbag):
         """Test task dependencies are correct."""
-        dag = dagbag.get_dag('crypto_analysis_pipeline')
+        dag = self._get_dag(dagbag)
         
         # Test get_crypto_pairs has no upstream
         get_pairs = dag.get_task('get_crypto_pairs')
@@ -77,7 +80,7 @@ class TestCryptoPipelineDAG:
     
     def test_dag_default_args(self, dagbag):
         """Test DAG default args."""
-        dag = dagbag.get_dag('crypto_analysis_pipeline')
+        dag = self._get_dag(dagbag)
         
         assert dag.default_args.get('retries') == 3, \
             "Should have 3 retries"
@@ -90,7 +93,7 @@ class TestCryptoPipelineDAG:
     
     def test_dag_uses_taskflow_api(self, dagbag):
         """Test DAG uses TaskFlow API decorators."""
-        dag = dagbag.get_dag('crypto_analysis_pipeline')
+        dag = self._get_dag(dagbag)
         
         # Check for decorated tasks
         taskflow_tasks = [
@@ -109,7 +112,7 @@ class TestCryptoPipelineDAG:
     
     def test_dag_has_data_quality_checks(self, dagbag):
         """Test DAG includes data quality checks."""
-        dag = dagbag.get_dag('crypto_analysis_pipeline')
+        dag = self._get_dag(dagbag)
         task_ids = [task.task_id for task in dag.tasks]
         
         quality_check_tasks = [
@@ -123,7 +126,7 @@ class TestCryptoPipelineDAG:
     
     def test_dag_has_sensor(self, dagbag):
         """Test DAG includes sensor for data verification."""
-        dag = dagbag.get_dag('crypto_analysis_pipeline')
+        dag = self._get_dag(dagbag)
         
         sensor_task = dag.get_task('verify_data_loaded')
         assert sensor_task is not None, "Sensor task should exist"
@@ -134,19 +137,24 @@ class TestCryptoPipelineDAG:
     
     def test_dag_start_date(self, dagbag):
         """Test DAG has correct start date."""
-        dag = dagbag.get_dag('crypto_analysis_pipeline')
-        
-        expected_start = datetime(2024, 1, 1)
-        assert dag.start_date.year == expected_start.year, \
-            "Start date year should be 2024"
-        assert dag.start_date.month == expected_start.month, \
-            "Start date month should be January"
-        assert dag.start_date.day == expected_start.day, \
-            "Start date day should be 1st"
+        dag = self._get_dag(dagbag)
+
+        assert dag.start_date.year == 2024, "Start date year should be 2024"
+        assert dag.start_date.month == 1, "Start date month should be January"
+        assert dag.start_date.day == 1, "Start date day should be 1st"
+        assert dag.timezone is not None, "DAG should have timezone configured"
+        assert str(dag.timezone) == "UTC", "DAG timezone should be UTC"
+
+    def test_dag_uses_refactored_pipeline_modules(self):
+        """Test DAG imports pipeline logic from src package modules."""
+        with open("dags/crypto_pipeline_dag.py", "r", encoding="utf-8") as dag_file:
+            content = dag_file.read()
+        assert "from pipeline.config import" in content
+        assert "from pipeline import task_logic" in content
     
     def test_dag_has_documentation(self, dagbag):
         """Test DAG has documentation."""
-        dag = dagbag.get_dag('crypto_analysis_pipeline')
+        dag = self._get_dag(dagbag)
         
         assert dag.description is not None, "DAG should have description"
         assert len(dag.description) > 0, "Description should not be empty"
